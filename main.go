@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"math/rand"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 type ApiResponse struct {
@@ -38,7 +40,7 @@ type Album struct {
 	Name string `json:"name"`
 }
 
-func fetchAllData(baseURL *url.URL, token string) ([]Item, error) {
+func fetchAllData(baseURL *url.URL, client *http.Client) ([]Item, error) {
 	var allData []Item
 	offset := 0
 	limit := 100
@@ -51,21 +53,7 @@ func fetchAllData(baseURL *url.URL, token string) ([]Item, error) {
 		params.Add("fields", fields)
 		baseURL.RawQuery = params.Encode()
 
-		// 新しいリクエストを作成
-		req, err := http.NewRequest("GET", baseURL.String(), nil)
-		if err != nil {
-			fmt.Println("Error creating request:", err)
-			return nil, err
-		}
-
-		// AuthorizationヘッダーにBearerトークンを追加
-		req.Header.Add("Authorization", "Bearer "+token)
-
-		// HTTPクライアントを作成
-		client := &http.Client{}
-
-		// リクエストを送信
-		resp, err := client.Do(req)
+		resp, err := client.Get(baseURL.String())
 		if err != nil {
 			fmt.Println("Error making request:", err)
 			return nil, err
@@ -149,7 +137,19 @@ func main() {
 		fmt.Println("Error loading .env file, using env variable")
 	}
 
-	token := os.Getenv("SPOTIFY_BEARER_TOKEN")
+	config := clientcredentials.Config{
+		ClientID:     os.Getenv("CLIENT_ID"),
+		ClientSecret: os.Getenv("CLIENT_SECRET"),
+		TokenURL:     "https://accounts.spotify.com/api/token",
+	}
+
+	config.Token(context.Background())
+	if err != nil {
+		fmt.Printf("Error retrieving token: %v\n", err)
+		return
+	}
+	client := config.Client(context.Background())
+
 	playlistId := os.Getenv("SPOTIFY_PLAYLIST_ID")
 	baseURL, err := url.Parse(fmt.Sprintf("https://api.spotify.com/v1/playlists/%s/tracks", playlistId))
 	if err != nil {
@@ -157,7 +157,7 @@ func main() {
 		return
 	}
 
-	allData, err := fetchAllData(baseURL, token)
+	allData, err := fetchAllData(baseURL, client)
 	if err != nil {
 		fmt.Printf("Error fetching data: %v\n", err)
 		return
