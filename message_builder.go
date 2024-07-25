@@ -27,9 +27,8 @@ func randomInt(n int) int {
 
 func getKosamegaPost(songId string) string {
 	var partial []string
-	start := []string{"冷静に聞き直すと", "久しぶりに", "思い出して"}
+	start := []string{"冷静に聴き直すと", "久しぶりに聴いてみたら", "思い出して聴いてみたら"}
 	partial = append(partial, randomChoice(start))
-	partial = append(partial, "聞いてみたら")
 	majide := []string{"マジで", "本当に", "かなり", "めっちゃ", "世界一"}
 	partial = append(partial, randomChoice(majide))
 	sugo := []string{"凄", "ヤバ", "かっこよ", "良"}
