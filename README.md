@@ -5,7 +5,6 @@
    - `CLIENT_ID`: spotify api client id
    - `CLIENT_SECRET`: spotify api client secret
    - `SPOTIFY_PLAYLIST_ID`: spotify playlist id
-   - `DISCORD_APP_ID`: discord application id
    - `DISCORD_PUBLIC_KEY`: discord public key
    - `DISCORD_BOT_TOKEN`: discord bot token
    - `PORT`: port to listen requests (optional)
@@ -20,4 +19,5 @@
 
 3. Register the interaction endpoint to discord application settings
 
+   Note that endpoint is not root but `<root>/discord/callback`.
    Press save changes button to check the endpoint reachability from discord.
