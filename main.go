@@ -1,67 +1,61 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"log"
+	"log/slog"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strconv"
 
-	"github.com/Karitham/corde"
+	"github.com/amatsagu/tempest"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Error loading .env file, using env variable")
-	}
-
-	var command = corde.NewSlashCommand("random-song", "send random song")
-	token := os.Getenv("DISCORD_BOT_TOKEN")
-	if token == "" {
-		log.Fatalln("DISCORD_BOT_TOKEN not set")
-	}
-	appID := corde.SnowflakeFromString(os.Getenv("DISCORD_APP_ID"))
-	if appID == 0 {
-		log.Fatalln("DISCORD_APP_ID not set")
-	}
-	pk := os.Getenv("DISCORD_PUBLIC_KEY")
-	if pk == "" {
-		log.Fatalln("DISCORD_PUBLIC_KEY not set")
+		slog.Info("Error loading .env file, using env variable")
 	}
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
-		log.Println("PORT environment variable not set, falling back to default 8080")
+		slog.Info("PORT environment variable not set, falling back to default 8080")
 		port = 8080
 	}
 
-	m := corde.NewMux(pk, appID, token)
-	m.SlashCommand("random-song", randomSongHandler)
+	slog.Info("Creating new Tempest client...")
+	client := tempest.NewClient(tempest.ClientOptions{
+		PublicKey: os.Getenv("DISCORD_PUBLIC_KEY"),
+		Rest:      tempest.NewRestClient(os.Getenv("DISCORD_BOT_TOKEN")),
+	})
 
-	g := corde.GuildOpt(corde.SnowflakeFromString(os.Getenv("DISCORD_GUILD_ID")))
-	if err := m.RegisterCommand(command, g); err != nil {
-		log.Fatalln("error registering command: ", err)
-	}
-
-	log.Printf("serving on :%d\n", port)
-	if err := m.ListenAndServe(fmt.Sprintf(":%d", port)); err != nil {
-		log.Fatalln(err)
-	}
-
-	songId, err := getRandomSongId()
+	client.RegisterCommand(GetRandomSong)
+	err = client.SyncCommands([]tempest.Snowflake{}, nil, false)
 	if err != nil {
-		fmt.Println("Error in getting random song")
+		slog.Error("failed to sync local commands storage with Discord API", err)
 	}
-	fmt.Println(getKosamegaPost(songId))
+	http.HandleFunc("POST /discord/callback", client.HandleDiscordRequest)
+
+	slog.Info(fmt.Sprintf("Serving application at: :%d/discord/callback", port))
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+		slog.Error("Fatal: ", err)
+	}
+
 }
 
-func randomSongHandler(ctx context.Context, w corde.ResponseWriter, _ *corde.Interaction[corde.SlashCommandInteractionData]) {
-	songId, err := getRandomSongId()
-	if err != nil {
-		fmt.Println("Error in getting random song")
-		w.Respond(corde.NewResp().Content("error getting random song").Ephemeral())
-	}
-	post := getKosamegaPost(songId)
-	w.Respond(corde.NewResp().Content(post))
+var GetRandomSong tempest.Command = tempest.Command{
+	Name:          "random-song",
+	Description:   "send random song",
+	AvailableInDM: true,
+	SlashCommandHandler: func(itx *tempest.CommandInteraction) {
+		songId, err := getRandomSongId()
+		if err != nil {
+			slog.Error("Error in getting random song")
+			itx.SendLinearReply("error getting random song", true)
+			return
+		}
+		post := getKosamegaPost(songId)
+		itx.SendLinearReply(post, false)
+		//itx.SendLinearReply(fmt.Sprintf("Result: %d", af+bf), false)
+	},
 }
