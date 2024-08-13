@@ -82,7 +82,7 @@ func getOpenSpotifyURL(id string) string {
 	return fmt.Sprintf("https://open.spotify.com/track/%s", id)
 }
 
-func getRandomSongId() (string, error) {
+func getRandomSongId(r RandSource) (string, error) {
 	config := clientcredentials.Config{
 		ClientID:     os.Getenv("CLIENT_ID"),
 		ClientSecret: os.Getenv("CLIENT_SECRET"),
@@ -110,5 +110,5 @@ func getRandomSongId() (string, error) {
 	}
 
 	fmt.Printf("Total data count: %d\n", len(allData))
-	return randomChoice(allData).Track.Id, nil
+	return randomChoice(allData, r).Track.Id, nil
 }

@@ -48,13 +48,13 @@ var GetRandomSong tempest.Command = tempest.Command{
 	Description:   "send random song",
 	AvailableInDM: true,
 	SlashCommandHandler: func(itx *tempest.CommandInteraction) {
-		songId, err := getRandomSongId()
+		songId, err := getRandomSongId(DefaultRandSource{})
 		if err != nil {
 			slog.Error("Error in getting random song")
 			itx.SendLinearReply("error getting random song", true)
 			return
 		}
-		post := getKosamegaPost(songId)
+		post := getKosamegaPost(songId, DefaultRandSource{})
 		itx.SendLinearReply(post, false)
 		//itx.SendLinearReply(fmt.Sprintf("Result: %d", af+bf), false)
 	},
