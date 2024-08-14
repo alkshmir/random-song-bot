@@ -1,6 +1,6 @@
 module github.com/alkshmir/random-song-bot.git
 
-go 1.22.2
+go 1.23.0
 
 require (
 	github.com/amatsagu/tempest v1.2.1-0.20240719093435-fc7b5326c164
