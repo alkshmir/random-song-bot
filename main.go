@@ -32,13 +32,13 @@ func main() {
 	client.RegisterCommand(GetRandomSong)
 	err = client.SyncCommands([]tempest.Snowflake{}, nil, false)
 	if err != nil {
-		slog.Error("failed to sync local commands storage with Discord API", err)
+		slog.Error("failed to sync local commands storage with Discord API", slog.String("error", err.Error()))
 	}
 	http.HandleFunc("POST /discord/callback", client.HandleDiscordRequest)
 
 	slog.Info(fmt.Sprintf("Serving application at: :%d/discord/callback", port))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
-		slog.Error("Fatal: ", err)
+		slog.Error("Fatal: ", slog.String("error", err.Error()))
 	}
 
 }
