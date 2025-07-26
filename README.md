@@ -17,7 +17,10 @@
    ngrok http http://localhost:<port>
    ```
 
-3. Register the interaction endpoint to discord application settings
+3. Register the interaction endpoint to [discord application settings](https://discord.com/developers/applications)
 
    Note that endpoint is not root but `<root>/discord/callback`.
    Press save changes button to check the endpoint reachability from discord.
+
+   If you are using Ngrok, the endpoint will appear in your terminal after running above command.
+   Set `https://<random>.ngrok-free.app/discord/callback` as the interaction endpoint URL.
