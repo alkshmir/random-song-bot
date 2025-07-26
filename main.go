@@ -26,15 +26,15 @@ func main() {
 	slog.Info("Creating new Tempest client...")
 	client := tempest.NewClient(tempest.ClientOptions{
 		PublicKey: os.Getenv("DISCORD_PUBLIC_KEY"),
-		Rest:      tempest.NewRestClient(os.Getenv("DISCORD_BOT_TOKEN")),
+		Token:     os.Getenv("DISCORD_BOT_TOKEN"),
 	})
 
 	client.RegisterCommand(GetRandomSong)
-	err = client.SyncCommands([]tempest.Snowflake{}, nil, false)
+	err = client.SyncCommandsWithDiscord([]tempest.Snowflake{}, nil, false)
 	if err != nil {
 		slog.Error("failed to sync local commands storage with Discord API", slog.String("error", err.Error()))
 	}
-	http.HandleFunc("POST /discord/callback", client.HandleDiscordRequest)
+	http.HandleFunc("POST /discord/callback", client.DiscordRequestHandler)
 
 	slog.Info(fmt.Sprintf("Serving application at: :%d/discord/callback", port))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
@@ -44,9 +44,10 @@ func main() {
 }
 
 var GetRandomSong tempest.Command = tempest.Command{
-	Name:          "random-song",
-	Description:   "send random song",
-	AvailableInDM: true,
+	Name:        "random-song",
+	Description: "send random song",
+	// XXX: AvailableInDM may be removed in tempest v1.3.0
+	//AvailableInDM: true,
 	SlashCommandHandler: func(itx *tempest.CommandInteraction) {
 		songId, err := getRandomSongId(DefaultRandSource{})
 		if err != nil {
